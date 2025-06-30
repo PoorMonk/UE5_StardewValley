@@ -1,6 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "StardewValleyCharacter.h"
+
+#include "EngineUtils.h"
 #include "Engine/LocalPlayer.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -10,6 +12,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "PlantableGround.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -67,6 +70,8 @@ void AStardewValleyCharacter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+
+	NearbyGround = nullptr;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -86,6 +91,9 @@ void AStardewValleyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AStardewValleyCharacter::Look);
+
+		// Plant
+		EnhancedInputComponent->BindAction(PlantAction, ETriggerEvent::Triggered, this, &AStardewValleyCharacter::Plant);
 	}
 	else
 	{
@@ -127,4 +135,43 @@ void AStardewValleyCharacter::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+
+void AStardewValleyCharacter::Plant()
+{
+	APlantableGround* Ground = FindNearbyPlantableGround();
+	if (Ground)
+	{
+		Ground->PlantSeed();
+		UE_LOG(LogTemp, Warning, TEXT("Player planted a seed!"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No plantable ground nearby!"));
+	}
+}
+
+APlantableGround* AStardewValleyCharacter::FindNearbyPlantableGround()
+{
+	// 获取玩家位置
+	FVector PlayerLocation = GetActorLocation();
+    
+	// 在世界中查找所有PlantableGround
+	UWorld* World = GetWorld();
+	if (!World) return nullptr;
+    
+	for (TActorIterator<APlantableGround> ActorItr(World); ActorItr; ++ActorItr)
+	{
+		APlantableGround* Ground = *ActorItr;
+		if (Ground)
+		{
+			float Distance = FVector::Dist(PlayerLocation, Ground->GetActorLocation());
+			if (Distance <= InteractionDistance)
+			{
+				return Ground;
+			}
+		}
+	}
+    
+	return nullptr;
 }

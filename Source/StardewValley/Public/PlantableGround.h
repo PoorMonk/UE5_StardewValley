@@ -6,6 +6,9 @@
 #include "GameFramework/Actor.h"
 #include "PlantableGround.generated.h"
 
+class UStaticMeshComponent;
+class UBoxComponent;
+
 UCLASS()
 class STARDEWVALLEY_API APlantableGround : public AActor
 {
@@ -23,4 +26,16 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UFUNCTION(BlueprintCallable, Category = "Planting")
+	void PlantSeed();
+
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components)
+	UStaticMeshComponent* GroundMesh;
+    
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components)
+	UBoxComponent* InteractionBox;
+    
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Planting")
+	bool bIsPlanted = false;
 };
